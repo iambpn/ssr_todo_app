@@ -12,7 +12,10 @@
     {% endblock %}
   </head>
   <body>
-    {% block body %} {% endblock %}
+    <div class="container-fluid">
+      <div>{% block header %} {% endblock %}</div>
+      <div>{% block body %} {% endblock %}</div>
+    </div>
   </body>
 </html>
 {% block script %} {# default content #}
