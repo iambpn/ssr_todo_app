@@ -12,9 +12,9 @@ interface TodoDoc {
 const TodoSchema = new Schema<TodoDoc>({
   name: String,
   description: String,
-  is_completed: Boolean,
+  is_completed: { type: Boolean, default: false },
   scheduled_date: { type: Date, required: true },
   created_at: { type: Date, default: Date.now },
 });
 
-const TodoModel = mongoose.model<TodoDoc>("Todo", TodoSchema);
+export const TodoModel = mongoose.model<TodoDoc>("Todo", TodoSchema);

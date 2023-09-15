@@ -1,11 +1,15 @@
-{% extends "base/base_with_header.njk" %} {% block body %}
+{% extends "base/base_with_header.njk" %} {% block css %} {{super()}}
+<style>
+  .strikeThrough {
+    text-decoration: line-through;
+  }
+</style>
+{% endblock %} {% block body %}
 <div class="d-flex w-100 align-items-center flex-column">
   <div class="w-50 border rounded px-2 py-3" style="min-height: 100px">
     <div class="d-flex justify-content-between align-items-center">
-      <h4 class="px-2">
-        Todos
-      </h4>
-      <button class="btn btn-outline-secondary">Add Todo</button>
+      <h4 class="px-2">Todos</h4>
+      <a href="/add" class="btn btn-outline-secondary">Add Todo</a>
     </div>
     <div class="input-group my-3">
       <input
@@ -20,48 +24,22 @@
     <div>
       <div class="">
         <ul class="list-group">
-          <li class="list-group-item">
-            <input
-              class="form-check-input me-1"
-              type="checkbox"
-              value=""
-              id="firstCheckboxStretched"
-            />
-            <label
-              class="form-check-label stretched-link"
-              for="firstCheckboxStretched"
-              >First checkbox</label
-            >
+          {% for todo in todos %}
+          <li class="list-group-item d-flex">
+            <input class="form-check-input me-1 todo-completed-toggle"
+            type="checkbox" data-id="{{todo._id}}" {{'checked' if
+            todo.is_completed}}/>
+            <div class="ms-2 me-auto">
+              <div class="fw-bold text-capitalize">{{todo.name}}</div>
+              {{todo.description}}
+            </div>
           </li>
-          <li class="list-group-item">
-            <input
-              class="form-check-input me-1"
-              type="checkbox"
-              value=""
-              id="secondCheckboxStretched"
-            />
-            <label
-              class="form-check-label stretched-link"
-              for="secondCheckboxStretched"
-              >Second checkbox</label
-            >
-          </li>
-          <li class="list-group-item">
-            <input
-              class="form-check-input me-1"
-              type="checkbox"
-              value=""
-              id="thirdCheckboxStretched"
-            />
-            <label
-              class="form-check-label stretched-link"
-              for="thirdCheckboxStretched"
-              >Third checkbox</label
-            >
-          </li>
+          {% endfor %}
         </ul>
       </div>
     </div>
   </div>
 </div>
+{% endblock %} {% block script %} {{super()}}
+<script src="/public/script/home.js"></script>
 {% endblock %}
