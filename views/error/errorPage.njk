@@ -1,0 +1,8 @@
+{% extends "base/base_with_header.njk" %} {% block body %}
+<div class="d-flex justify-content-center">
+  <div class="w-50 d-flex align-items-center flex-column">
+    <h2>{{error}} Error</h2>
+    <div><h3>{{message}}</h3></div>
+  </div>
+</div>
+{% endblock %}
