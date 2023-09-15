@@ -1,3 +1,67 @@
 {% extends "base/base_with_header.njk" %} {% block body %}
-<div>body</div>
+<div class="d-flex w-100 align-items-center flex-column">
+  <div class="w-50 border rounded px-2 py-3" style="min-height: 100px">
+    <div class="d-flex justify-content-between align-items-center">
+      <h4 class="px-2">
+        Todos
+      </h4>
+      <button class="btn btn-outline-secondary">Add Todo</button>
+    </div>
+    <div class="input-group my-3">
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Search with name..."
+      />
+      <button class="btn btn-outline-success" type="button" id="button-search">
+        Search
+      </button>
+    </div>
+    <div>
+      <div class="">
+        <ul class="list-group">
+          <li class="list-group-item">
+            <input
+              class="form-check-input me-1"
+              type="checkbox"
+              value=""
+              id="firstCheckboxStretched"
+            />
+            <label
+              class="form-check-label stretched-link"
+              for="firstCheckboxStretched"
+              >First checkbox</label
+            >
+          </li>
+          <li class="list-group-item">
+            <input
+              class="form-check-input me-1"
+              type="checkbox"
+              value=""
+              id="secondCheckboxStretched"
+            />
+            <label
+              class="form-check-label stretched-link"
+              for="secondCheckboxStretched"
+              >Second checkbox</label
+            >
+          </li>
+          <li class="list-group-item">
+            <input
+              class="form-check-input me-1"
+              type="checkbox"
+              value=""
+              id="thirdCheckboxStretched"
+            />
+            <label
+              class="form-check-label stretched-link"
+              for="thirdCheckboxStretched"
+              >Third checkbox</label
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
