@@ -31,39 +31,66 @@
     </form>
     <div>
       <div class="">
-        <ul class="list-group">
-          {% for todo in todos %}
-          <li class="list-group-item d-flex">
-            <input class="form-check-input me-1 todo-completed-toggle"
-            type="checkbox" data-id="{{todo._id}}" {{'checked' if
-            todo.is_completed}}/>
-            <div class="ms-2 me-auto w-100">
-              <div
-                class="fw-bold text-capitalize d-flex align-items-top justify-content-between"
-              >
-                <span class="{{'strikeThrough' if todo.is_completed}}"
-                  >{{todo.name}}</span
+        <div class="d-flex justify-content-between">
+          <div>
+            <a
+              href="/?completed=true"
+              class="btn btn-info {{'disabled' if isCompleted === true or keyword !== undefined}}"
+            >
+              Done
+            </a>
+            <a
+              href="/?completed=false"
+              class="btn btn-info {{'disabled' if isCompleted === false or keyword !== undefined}}"
+              >Upcomming</a
+            >
+          </div>
+          {% if isCompleted !== undefined or keyword !== undefined %}
+          <a href="/" class="btn btn-danger">Clear filter</a>
+          {% endif %}
+        </div>
+        <div class="pt-2">
+          {% if isCompleted !== undefined %}
+          <span
+            >{{'Done' if isCompleted === true else 'Upcomming'}} Todos:</span
+          >
+          {% else %}
+          <span>All Todos:</span>
+          {% endif %}
+          <ul class="list-group">
+            {% for todo in todos %}
+            <li class="list-group-item d-flex">
+              <input class="form-check-input me-1 todo-completed-toggle"
+              type="checkbox" data-id="{{todo._id}}" {{'checked' if
+              todo.is_completed}}/>
+              <div class="ms-2 me-auto w-100">
+                <div
+                  class="fw-bold d-flex align-items-top justify-content-between"
                 >
-                <div>
-                  <a href="/update/{{todo._id}}" class="btn btn-outline-info"
-                    >Edit</a
+                  <span class="{{'strikeThrough' if todo.is_completed}}"
+                    >{{todo.name}}</span
                   >
-                  <button
-                    class="btn btn-outline-danger remove-todo-btn"
-                    data-id="{{todo._id}}"
-                  >
-                    Delete
-                  </button>
+                  <div>
+                    <a href="/update/{{todo._id}}" class="btn btn-outline-info"
+                      >Edit</a
+                    >
+                    <button
+                      class="btn btn-outline-danger remove-todo-btn"
+                      data-id="{{todo._id}}"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
+                <span class="text-capitalize">{{todo.description}}</span><br />
+                {% if not todo.is_completed %}
+                <span>Due: {{parseToReadableDate(todo.scheduled_date)}}</span>
+                {% endif %}
               </div>
-              <span class="text-capitalize">{{todo.description}}</span><br />
-              {% if not todo.is_completed %}
-              <span>Due: {{parseToReadableDate(todo.scheduled_date)}}</span>
-              {% endif %}
-            </div>
-          </li>
-          {% endfor %}
-        </ul>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
       </div>
     </div>
   </div>

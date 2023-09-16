@@ -1,21 +1,34 @@
 import { NextFunction, Request, Response, Router } from "express";
 import mongoose from "mongoose";
+import { parseToIsoDate, parseToReadableDate } from "../helper/date.helper";
 import { TodoModel } from "../model/todo.model";
 import { addTodoValidation } from "../validation/schema/addTodo.validation";
 import { updateCompletedStatusSchema } from "../validation/schema/updateCompletes.validation";
 import { validateZod } from "../validation/validate";
-import { parseToReadableDate, parseToIsoDate } from "../helper/date.helper";
 
 export const indexRouter = Router();
 
 indexRouter.get("/", async (req: Request, res: Response) => {
   const keyword = req.query.keyword as string | undefined;
+  let isCompletedQuery = req.query.completed as string | undefined;
+
+  let isCompleted: Boolean | undefined = undefined;
+  if (isCompletedQuery !== undefined) {
+    if (isCompletedQuery === "true") {
+      isCompleted = true;
+    } else {
+      isCompleted = false;
+    }
+  }
+
   const todos = await TodoModel.find({
-    name: { $regex: keyword ?? "" },
+    name: { $regex: keyword ?? "", $options: "i" },
+    ...(isCompleted !== undefined && { is_completed: isCompleted }),
+    ...(isCompleted === false && { scheduled_date: { $gte: new Date() } }),
   })
     .sort({ scheduled_date: 1 })
     .exec();
-  res.render("body/index", { todos, keyword, parseToReadableDate });
+  res.render("body/index", { todos, keyword, parseToReadableDate, isCompleted });
 });
 
 indexRouter.get("/add", (req: Request, res: Response) => {
@@ -38,7 +51,7 @@ indexRouter.post("/add", async (req: Request, res: Response) => {
 
   await todoItem.save();
 
-  return res.redirect("/");
+  return res.redirect(301, "/");
 });
 
 indexRouter.put("/toggleUpdate", async (req: Request, res: Response) => {
@@ -111,7 +124,7 @@ indexRouter.post("/update/:id", async (req: Request, res: Response, next: NextFu
 
   await todo.save();
 
-  return res.redirect("/");
+  return res.redirect(301, "/");
 });
 
 indexRouter.delete("/delete/:id", async (req: Request, res: Response, next: NextFunction) => {
