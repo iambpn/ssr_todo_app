@@ -13,7 +13,9 @@ const TodoSchema = new Schema<TodoDoc>({
   name: String,
   description: String,
   is_completed: { type: Boolean, default: false },
+  /* schedule date will be in users timezone. */
   scheduled_date: { type: Date, required: true },
+  /* created at will be in UTC timezone */
   created_at: { type: Date, default: Date.now },
 });
 
