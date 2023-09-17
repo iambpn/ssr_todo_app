@@ -2,9 +2,11 @@
   "name": "todo_app",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "tsnd --rs ./src/index.ts --watch",
+    "build": "shx rm -r ./dist && tsc",
+    "serve:build": "node .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,6 +18,7 @@
     "express-async-errors": "^3.1.1",
     "mongoose": "^7.5.1",
     "nunjucks": "^3.2.4",
+    "shx": "^0.3.4",
     "typescript": "^5.2.2",
     "zod": "^3.22.2"
   },
