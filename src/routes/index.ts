@@ -109,6 +109,7 @@ indexRouter.post("/update/:id", async (req: Request, res: Response, next: NextFu
   if (isError) {
     return res.render("body/addTodo", {
       errors,
+      values: { ...req.body, _id: req.params.id },
     });
   }
 
