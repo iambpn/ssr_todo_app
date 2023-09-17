@@ -1,11 +1,5 @@
 import { z } from "zod";
 
-const getYesterdayDate = () => {
-  const yesterday = new Date();
-  yesterday.setDate(new Date().getDate() - 1);
-  return yesterday;
-};
-
 export const addTodoValidation = z.object({
   name: z
     .string({
@@ -29,5 +23,5 @@ export const addTodoValidation = z.object({
       invalid_type_error: "Schedule date must be a valid date",
       coerce: true,
     })
-    .min(getYesterdayDate(), { message: "Scheduled date should not be at the past" }),
+    .min(new Date(), { message: "Scheduled date should not be at the past" }),
 });
