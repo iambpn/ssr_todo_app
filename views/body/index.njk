@@ -58,7 +58,6 @@
           <span>All Todos:</span>
           {% endif %}
           <ul class="list-group">
-            {{todos | stringify}}
             {% for todo in todos %}
             <li class="list-group-item d-flex">
               <input class="form-check-input me-1 todo-completed-toggle"
