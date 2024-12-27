@@ -3,17 +3,18 @@ import express, { NextFunction, Request, Response } from "express";
 import nunjucks from "nunjucks";
 import * as path from "path";
 import dotenv from "dotenv";
-import { initMongoose } from "./mongoose/init";
 import { indexRouter } from "./routes";
 
 // load env
 dotenv.config();
 
-if (!process.env.MONGO_URL) {
-  throw new Error("MONGO_URL is required.");
+if (!process.env.DB_FILE_NAME) {
+  throw new Error("DB_FILE_NAME is required.");
 }
 
-initMongoose(process.env.MONGO_URL);
+// initialize drizzle db
+import "./drizzle/init";
+
 main();
 
 function main() {
@@ -37,11 +38,16 @@ function main() {
   );
 
   // setting up template engine
-  nunjucks.configure("views", {
+  const nunjucksEnv = nunjucks.configure("views", {
     autoescape: true,
     express: app,
     dev: process.env.NODE_ENV === "development",
     watch: process.env.NODE_ENV === "development",
+  });
+
+  // adding custom filter
+  nunjucksEnv.addFilter("stringify", (value) => {
+    return JSON.stringify(value, null, 4);
   });
 
   // adding routes
@@ -54,6 +60,7 @@ function main() {
 
   // GLobal error handler
   app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+    console.log(error);
     res.render("error/errorPage", { error: "Internal Server Error", message: error.message });
   });
 

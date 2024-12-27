@@ -1,6 +1,8 @@
 import { ZodError, ZodObject, ZodType } from "zod";
 
-export function validateZod<T>(schema: ZodType<T>, data: Record<string, any>) {
+type validateReturnType<T> = { parsed: T; isError: false } | { errors: Record<string, any>; isError: true };
+
+export function validateZod<T>(schema: ZodType<T>, data: Record<string, any>): validateReturnType<T> {
   try {
     const parsed = schema.parse(data);
     return { parsed, isError: false };

@@ -1,10 +1,12 @@
 import { NextFunction, Request, Response, Router } from "express";
-import mongoose from "mongoose";
 import { parseToIsoDate, parseToReadableDate } from "../helper/date.helper";
-import { TodoModel } from "../model/todo.model";
 import { addTodoValidation } from "../validation/schema/addTodo.validation";
 import { updateCompletedStatusSchema } from "../validation/schema/updateCompletes.validation";
 import { validateZod } from "../validation/validate";
+import { db } from "../drizzle/init";
+import { TodosSchema } from "../drizzle/schema";
+import { and, asc, like, SQL, sql } from "drizzle-orm";
+import * as uuid from "uuid";
 
 export const indexRouter = Router();
 
@@ -13,21 +15,25 @@ indexRouter.get("/", async (req: Request, res: Response) => {
   let isCompletedQuery = req.query.completed as string | undefined;
 
   let isCompleted: Boolean | undefined = undefined;
+  let completedQuery: SQL<unknown> | undefined = undefined;
   if (isCompletedQuery !== undefined) {
     if (isCompletedQuery === "true") {
       isCompleted = true;
+      completedQuery = sql`${TodosSchema.isCompleted} = true`;
     } else {
       isCompleted = false;
+      completedQuery = sql`${TodosSchema.isCompleted} = false and ${
+        TodosSchema.scheduledDate
+      } > ${new Date().getTime()}`;
     }
   }
 
-  const todos = await TodoModel.find({
-    name: { $regex: keyword ?? "", $options: "i" },
-    ...(isCompleted !== undefined && { is_completed: isCompleted }),
-    ...(isCompleted === false && { scheduled_date: { $gte: new Date() } }),
-  })
-    .sort({ scheduled_date: 1 })
-    .exec();
+  const todos = await db
+    .select()
+    .from(TodosSchema)
+    .where(and(like(TodosSchema.name, `%${keyword ?? ""}%`), completedQuery))
+    .orderBy(asc(TodosSchema.scheduledDate));
+
   res.render("body/index", { todos, keyword, parseToReadableDate, isCompleted });
 });
 
@@ -36,40 +42,43 @@ indexRouter.get("/add", (req: Request, res: Response) => {
 });
 
 indexRouter.post("/add", async (req: Request, res: Response) => {
-  const { parsed: body, isError, errors } = validateZod(addTodoValidation, req.body);
+  const validateRes = validateZod(addTodoValidation, req.body);
 
-  if (isError) {
+  if (validateRes.isError) {
     //handle error
+    const { errors } = validateRes;
     return res.render("body/addTodo", { errors, values: req.body });
   }
 
-  const todoItem = new TodoModel({
-    description: body?.description,
-    name: body?.name,
-    scheduled_date: body?.scheduled_date,
-  });
+  const { parsed: body } = validateRes;
 
-  await todoItem.save();
+  await db.insert(TodosSchema).values({
+    id: uuid.v4(),
+    name: body.name,
+    description: body.description,
+    isCompleted: false,
+    scheduledDate: new Date(body.scheduledDate),
+  });
 
   return res.redirect(301, "/");
 });
 
 indexRouter.put("/toggleUpdate", async (req: Request, res: Response) => {
-  const { parsed: body, isError, errors } = validateZod(updateCompletedStatusSchema, req.body);
+  const validateRes = validateZod(updateCompletedStatusSchema, req.body);
 
-  if (isError) {
+  if (validateRes.isError) {
+    const { errors } = validateRes;
     return res.status(400).json({
       error: errors?.id?._errors[0] ?? errors?._errors,
     });
   }
 
-  if (!mongoose.Types.ObjectId.isValid(body!.id)) {
-    return res.status(400).json({
-      error: "Invalid id",
-    });
-  }
-
-  const todo = await TodoModel.findById(body?.id).exec();
+  const { parsed: body } = validateRes;
+  const [todo] = await db
+    .select()
+    .from(TodosSchema)
+    .where(sql`${TodosSchema.id} = ${body.id}`)
+    .limit(1);
 
   if (!todo) {
     return res.status(400).json({
@@ -77,8 +86,12 @@ indexRouter.put("/toggleUpdate", async (req: Request, res: Response) => {
     });
   }
 
-  todo.is_completed = !todo.is_completed;
-  await todo.save();
+  await db
+    .update(TodosSchema)
+    .set({
+      isCompleted: !todo.isCompleted,
+    })
+    .where(sql`${TodosSchema.id} = ${body.id}`);
 
   res.status(200).json({
     message: "success",
@@ -86,11 +99,15 @@ indexRouter.put("/toggleUpdate", async (req: Request, res: Response) => {
 });
 
 indexRouter.get("/update/:id", async (req: Request, res: Response, next: NextFunction) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+  if (!req.params.id) {
     return next(new Error("Invalid Id"));
   }
 
-  const todo = await TodoModel.findById(req.params.id).exec();
+  const [todo] = await db
+    .select()
+    .from(TodosSchema)
+    .where(sql`${TodosSchema.id} = ${req.params.id}`)
+    .limit(1);
 
   if (!todo) {
     return next(new Error("Todo not found"));
@@ -100,36 +117,45 @@ indexRouter.get("/update/:id", async (req: Request, res: Response, next: NextFun
 });
 
 indexRouter.post("/update/:id", async (req: Request, res: Response, next: NextFunction) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+  if (!req.params.id) {
     return next(new Error("Invalid Id"));
   }
 
-  const { parsed: body, isError, errors } = validateZod(addTodoValidation, req.body);
+  const validateRes = validateZod(addTodoValidation, req.body);
 
-  if (isError) {
+  if (validateRes.isError) {
+    const { errors } = validateRes;
     return res.render("body/addTodo", {
       errors,
-      values: { ...req.body, _id: req.params.id },
+      values: { ...req.body, id: req.params.id },
     });
   }
 
-  const todo = await TodoModel.findById(req.params.id).exec();
+  const { parsed: body } = validateRes;
+  const [todo] = await db
+    .select()
+    .from(TodosSchema)
+    .where(sql`${TodosSchema.id} = ${req.params.id}`)
+    .limit(1);
 
   if (!todo) {
     return next(new Error("Todo not found"));
   }
 
-  todo.name = body!.name;
-  todo.description = body!.description;
-  todo.scheduled_date = body!.scheduled_date;
-
-  await todo.save();
+  await db
+    .update(TodosSchema)
+    .set({
+      name: body.name,
+      description: body.description,
+      scheduledDate: new Date(body.scheduledDate),
+    })
+    .where(sql`${TodosSchema.id} = ${req.params.id}`);
 
   return res.redirect(301, "/");
 });
 
 indexRouter.delete("/delete/:id", async (req: Request, res: Response, next: NextFunction) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+  if (!req.params.id) {
     return res.status(400).json({
       errors: {
         _errors: "Invalid Id",
@@ -137,7 +163,11 @@ indexRouter.delete("/delete/:id", async (req: Request, res: Response, next: Next
     });
   }
 
-  const todo = await TodoModel.findByIdAndDelete(req.params.id).exec();
+  const [todo] = await db
+    .select()
+    .from(TodosSchema)
+    .where(sql`${TodosSchema.id} = ${req.params.id}`)
+    .limit(1);
 
   if (!todo) {
     return res.status(400).json({
@@ -146,6 +176,8 @@ indexRouter.delete("/delete/:id", async (req: Request, res: Response, next: Next
       },
     });
   }
+
+  await db.delete(TodosSchema).where(sql`${TodosSchema.id} = ${req.params.id}`);
 
   return res.json({ data: todo });
 });

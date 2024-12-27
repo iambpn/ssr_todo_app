@@ -17,7 +17,7 @@ export const addTodoValidation = z.object({
     .min(2, {
       message: "Description must be minimum of 2 characters",
     }),
-  scheduled_date: z
+  scheduledDate: z
     .date({
       required_error: "Schedule date is required",
       invalid_type_error: "Schedule date must be a valid date",
